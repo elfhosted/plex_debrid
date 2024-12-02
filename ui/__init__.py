@@ -451,8 +451,6 @@ def threaded(stop):
     while not stop():
         if plex_watchlist.update() or overseerr_requests.update() or trakt_watchlist.update():
             library = content.classes.library()[0]()
-            if len(library) == 0:
-                continue
             watchlists = plex_watchlist + trakt_watchlist + overseerr_requests
             try:
                 watchlists.data.sort(key=lambda s: s.watchlistedAt,reverse=True)
