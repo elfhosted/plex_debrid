@@ -189,9 +189,26 @@ def download(element, stream=True, query='', force=False):
                                     delete('https://api.real-debrid.com/rest/1.0/torrents/delete/' + torrent_id)
                                     continue
                         else:
-                            ui_print(f'[realdebrid]: {release.title} is in status [{response.status}] - trying a different release.')
-                            delete('https://api.real-debrid.com/rest/1.0/torrents/delete/' + torrent_id)
-                            continue
+                            if response.status in ["waiting_files_selection"]:
+                                if hasattr(response, "files") and len(response.files) > 0:
+                                    version_files = []
+                                    for file_ in response.files:
+                                        debrid_file = file(file_.id, file_.path, file_.bytes, release.wanted_patterns, release.unwanted_patterns)
+                                        version_files.append(debrid_file)
+                                    release.files = [version(version_files)]
+                                    cached_ids = [vf.id for vf in version_files if vf.wanted and not vf.unwanted and vf.name.endswith(tuple(media_file_extensions))]
+                                    if len(cached_ids) == 0:
+                                        ui_print('[realdebrid] no selectable media files.', ui_settings.debug)
+                                    else:
+                                        post('https://api.real-debrid.com/rest/1.0/torrents/selectFiles/' + torrent_id, {'files': ",".join(map(str, cached_ids))})
+                                        ui_print(f'[realdebrid]: {release.title} is in status [{response.status}] - tried start download of torrent by selecting files.')
+                                        ui_print('[realdebrid] selectFiles response ' + repr(response), ui_settings.debug)
+                                continue
+                            else:
+                                ui_print(f'[realdebrid]: {release.title} is in status [{response.status}] - trying a different release.')
+                                delete('https://api.real-debrid.com/rest/1.0/torrents/delete/' + torrent_id)
+                                continue
+                            
                     if response.status == 'downloaded':
                         ui_print('[realdebrid] added cached release: ' + release.title)
                         if actual_title != "":
