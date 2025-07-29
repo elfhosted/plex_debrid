@@ -127,7 +127,7 @@ def scrape(query, altquery):
                 url = f"{base_url}/catalog/movie/mediafusion_search_movies/search={plain_text}.json"
                 meta = request(get, session, url)
             # collate all matched IMDB IDs
-            imdb_ids += [m.id for m in meta.metas]
+            imdb_ids += [m.id for m in meta.metas if regex.search(r'(tt[0-9]+)', m.id, regex.I)]
         except:
             try:
                 if type == "movie":
@@ -173,7 +173,7 @@ def scrape_imdb_movie(session: requests.Session, imdb_id: str, query_text: str =
             try:
                 url = f"{base_url}/catalog/series/mediafusion_search_series/search={query_text}.json"
                 meta = request(get, session, url)
-                return [scrape_imdb_series(session, m.id) for m in meta.metas]
+                return [scrape_imdb_series(session, m.id) for m in meta.metas if regex.search(r'(tt[0-9]+)', m.id, regex.I)]
             except Exception as e:
                 ui_print(f'[mediafusion] error: could not find IMDB ID for {query_text}. ' + str(e))
                 return []
