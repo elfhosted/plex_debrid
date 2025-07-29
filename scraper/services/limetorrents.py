@@ -54,7 +54,7 @@ def scrape(query, altquery):
                             size_match = regex.search(r'([0-9]*\.?[0-9]+)\s*(KB|MB|GB)', size, regex.I)
 
                             seeders_element = torrent.select_one('td.tdseed')
-                            seeders = int(seeders_element.get_text().strip()) if seeders_element else 0
+                            seeders = int(seeders_element.get_text().strip().replace(",", "")) if seeders_element else 0
 
                             if size_match:
                                 size_value = float(size_match.group(1))
