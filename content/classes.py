@@ -1186,6 +1186,7 @@ class media:
         # set anime info before episodes are removed
         self.isanime()
         if self.type == 'movie':
+            ui_print(f"processing movie: {self.title} ({self.year})", debug=ui_settings.debug)
             if (len(self.uncollected(library)) > 0 or self.version_missing()) and len(self.versions()) > 0:
                 if self.released() and not self.watched() and not self.downloading():
                     if not hasattr(self, "year") or self.year == None:
@@ -1227,6 +1228,7 @@ class media:
                     if retry:
                         self.watch()
         elif self.type == 'show':
+            ui_print(f"processing show: {self.title} ({self.year})", debug=ui_settings.debug)
             if len(self.versions()) > 0 and self.released() and (not self.collected(library) or self.version_missing()) and not self.watched():
                 self.isanime()
                 self.Seasons = self.uncollected(library)
@@ -1362,6 +1364,7 @@ class media:
                     toc = time.perf_counter()
                     ui_print('took ' + str(round(toc - tic, 2)) + 's')
         elif self.type == 'season':
+            ui_print(f"processing: {self.parentTitle} {self.title}", debug=ui_settings.debug)
             debrid_downloaded = False
             for release in parentReleases:
                 if regex.match(self.deviation(), release.title, regex.I):
