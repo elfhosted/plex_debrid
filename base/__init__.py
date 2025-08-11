@@ -94,7 +94,7 @@ class custom_session(requests.Session):
                 self.last_request_time = time.time()
 
                 if response.status_code in self.RETRY_CODES:
-                    logger.error(f"request error: {response.status_code} - retrying...")
+                    logger.error(f"request error: {response.status_code} - retrying... {url}")
                     retries += 1
                     if method == 'GET':
                         time.sleep(self.GET_RATE_LIMIT)
