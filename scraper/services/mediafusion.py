@@ -27,6 +27,8 @@ def request(func, *args):
         return []
 
     try:
+        if not hasattr(response, "content") or len(response.content) == 0:
+            return []
         json_response = json.loads(response.content, object_hook=lambda d: SimpleNamespace(**d))
     except Exception as e:
         ui_print('[mediafusion] error: unable to parse response:' + response.content.decode("utf-8") + " " + str(e))
