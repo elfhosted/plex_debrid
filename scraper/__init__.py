@@ -34,6 +34,23 @@ def scrape(query, altquery="(.*)"):
         for result in results:
             if not result == [] and not result == None:
                 scraped_releases += result
+        # consolidate duplicate torrent releases by identical hash across sources
+        consolidated = []
+        index_by_hash = {}
+        for rel in scraped_releases:
+            try:
+                if getattr(rel, 'type', None) == 'torrent' and getattr(rel, 'hash', ''):
+                    key = rel.hash.lower()
+                    if key in index_by_hash:
+                        consolidated[index_by_hash[key]].merge(rel)
+                    else:
+                        index_by_hash[key] = len(consolidated)
+                        consolidated.append(rel)
+                else:
+                    consolidated.append(rel)
+            except:
+                consolidated.append(rel)
+        scraped_releases = consolidated
         for release in scraped_releases:
             release.title = ''.join([i if ord(i) < 512 else '' for i in release.title])
         ui_print('done - found ' + str(len(scraped_releases)) + ' releases')

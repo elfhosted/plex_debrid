@@ -24,8 +24,8 @@ class release:
         self.download = download
         self.hash = ''
         if len(self.download) > 0:
-            if regex.search(r'(?<=btih:).*?(?=&)', str(self.download[0]), regex.I):
-                self.hash = regex.findall(r'(?<=btih:).*?(?=&)', str(self.download[0]), regex.I)[0]
+            if regex.search(r'(?<=btih:).*?(?=&|$)', str(self.download[0]), regex.I):
+                self.hash = regex.findall(r'(?<=btih:).*?(?=&|$)', str(self.download[0]), regex.I)[0]
         self.cached = []
         self.maybe_cached = []  # services where cached state can only be determined at time of download
         self.checked = False
@@ -38,7 +38,160 @@ class release:
 
     # Define when releases are Equal
     def __eq__(self, other):
-        return self.title == other.title
+        try:
+            if type(other) == type(None):
+                return False
+            # Prefer hash equality for torrents when available
+            if self.type == 'torrent' and getattr(self, 'hash', '') and getattr(other, 'type', None) == 'torrent' and getattr(other, 'hash', ''):
+                return self.hash.lower() == other.hash.lower()
+            # Fallback to historical behavior (title match)
+            return self.title == other.title
+        except:
+            return False
+
+    def __hash__(self):
+        try:
+            if self.type == 'torrent' and getattr(self, 'hash', ''):
+                return hash(('torrent', self.hash.lower()))
+            return hash(self.title)
+        except:
+            return 0
+
+    def merge(self, other):
+        # Ensure identity matches per __eq__ rules
+        if not self == other:
+            raise ValueError('Attempted to merge two different releases')
+
+        # Helper to extract btih from a link
+        def extract_btih(link: str) -> str:
+            try:
+                if regex.search(r'(?<=btih:).*?(?=&|$)', str(link), regex.I):
+                    return regex.findall(r'(?<=btih:).*?(?=&|$)', str(link), regex.I)[0].lower()
+            except:
+                pass
+            return ''
+
+        # Helper to unique-merge lists while preserving order
+        def merge_unique(base_list: list, add_list: list) -> list:
+            seen = set()
+            merged = []
+            for item in base_list + add_list:
+                key = item
+                if isinstance(item, str):
+                    key = item
+                if key not in seen:
+                    seen.add(key)
+                    merged.append(item)
+            return merged
+
+        # Prefer existing values, but adopt non-empty from other when empty
+        if not getattr(self, 'hash', '') and getattr(other, 'hash', ''):
+            self.hash = other.hash
+
+        if (not isinstance(getattr(self, 'source', ''), str)) or len(getattr(self, 'source', '')) == 0:
+            self.source = other.source
+
+        if (not isinstance(getattr(self, 'title', ''), str)) or len(getattr(self, 'title', '')) == 0:
+            self.title = other.title
+
+        if (not isinstance(getattr(self, 'files', []), list)) or len(getattr(self, 'files', [])) == 0:
+            self.files = other.files
+
+        self.checked |= other.checked
+
+        # size, seeders: take the max value
+        try:
+            self.size = max(float(self.size), float(other.size))
+        except:
+            pass
+        try:
+            self.seeders = max(int(self.seeders), int(other.seeders))
+        except:
+            pass
+
+        # download: merge lists, dedupe by btih when available
+        try:
+            existing_hashes = set()
+            for link in getattr(self, 'download', []):
+                bt = extract_btih(link)
+                if bt:
+                    existing_hashes.add(bt)
+            for link in getattr(other, 'download', []):
+                bt = extract_btih(link)
+                if bt:
+                    if bt not in existing_hashes:
+                        self.download.append(link)
+                        existing_hashes.add(bt)
+                else:
+                    if link not in self.download:
+                        self.download.append(link)
+        except:
+            # fallback to simple unique merge
+            self.download = merge_unique(getattr(self, 'download', []), getattr(other, 'download', []))
+
+        # resolution: if "0", then defer to the other
+        try:
+            if str(getattr(self, 'resolution', '0')) == '0' and str(getattr(other, 'resolution', '0')) != '0':
+                self.resolution = other.resolution
+        except:
+            pass
+
+        # cached, maybe_cached: merge unique strings
+        try:
+            self.cached = merge_unique(getattr(self, 'cached', []), getattr(other, 'cached', []))
+        except:
+            pass
+        try:
+            self.maybe_cached = merge_unique(getattr(self, 'maybe_cached', []), getattr(other, 'maybe_cached', []))
+        except:
+            pass
+
+        # wanted, unwanted: if 0, then defer to the other
+        try:
+            if int(getattr(self, 'wanted', 0)) == 0 and int(getattr(other, 'wanted', 0)) != 0:
+                self.wanted = other.wanted
+        except:
+            pass
+        try:
+            if int(getattr(self, 'unwanted', 0)) == 0 and int(getattr(other, 'unwanted', 0)) != 0:
+                self.unwanted = other.unwanted
+        except:
+            pass
+
+        # If any string or list attribute is empty on self, adopt from other
+        try:
+            for attr in ['source', 'title']:
+                val_self = getattr(self, attr, '')
+                val_other = getattr(other, attr, '')
+                if isinstance(val_self, str) and len(val_self) == 0 and isinstance(val_other, str) and len(val_other) > 0:
+                    setattr(self, attr, val_other)
+            for attr in ['files']:
+                val_self = getattr(self, attr, [])
+                val_other = getattr(other, attr, [])
+                if isinstance(val_self, list) and len(val_self) == 0 and isinstance(val_other, list) and len(val_other) > 0:
+                    setattr(self, attr, val_other)
+        except:
+            pass
+
+        # source: remove square brackets and join using commas, unique
+        try:
+            def normalize_sources(s: str) -> list:
+                if not isinstance(s, str) or len(s) == 0:
+                    return []
+                s = s.replace('[', '').replace(']', '')
+                parts = [p.strip() for p in s.split(',') if len(p.strip()) > 0]
+                return parts if len(parts) > 0 else [s.strip()]
+
+            srcs = []
+            for s in [getattr(self, 'source', ''), getattr(other, 'source', '')]:
+                for p in normalize_sources(s):
+                    if p not in srcs:
+                        srcs.append(p)
+            self.source = "[" + ', '.join(srcs) + "]"
+        except:
+            pass
+
+        return self
 
 class rename:
     replaceChars = [
