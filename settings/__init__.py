@@ -264,7 +264,7 @@ class setting:
                         lists = [edit, ]
                         setattr(self.cls, self.key, lists)
                     if self.name == 'Plex users':
-                        url = 'https://metadata.provider.plex.tv/library/sections/watchlist/all?X-Plex-Token=' + \
+                        url = 'https://discover.provider.plex.tv/library/sections/watchlist/all?X-Plex-Token=' + \
                                 content.services.plex.users[0][1]
                         response = content.services.plex.session.get(url, headers=content.services.plex.headers)
                         if response.status_code == 200:

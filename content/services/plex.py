@@ -68,7 +68,7 @@ class watchlist(classes.watchlist):
                 total = 1
                 while added < total:
                     total = 0
-                    url = 'https://metadata.provider.plex.tv/library/sections/watchlist/all?X-Plex-Container-Size=200&X-Plex-Container-Start=' + str(added) + '&X-Plex-Token=' + user[1]
+                    url = 'https://discover.provider.plex.tv/library/sections/watchlist/all?X-Plex-Container-Size=200&X-Plex-Container-Start=' + str(added) + '&X-Plex-Token=' + user[1]
                     response = get(url)
                     if hasattr(response, 'MediaContainer'):
                         total = response.MediaContainer.totalSize
@@ -100,7 +100,7 @@ class watchlist(classes.watchlist):
         if hasattr(item, 'user'):
             if isinstance(item.user[0], list):
                 for user in item.user:
-                    url = 'https://metadata.provider.plex.tv/actions/removeFromWatchlist?ratingKey=' + item.ratingKey + '&X-Plex-Token=' + user[1]
+                    url = 'https://discover.provider.plex.tv/actions/removeFromWatchlist?ratingKey=' + item.ratingKey + '&X-Plex-Token=' + user[1]
                     try:
                         response = session.put(url, data={'ratingKey': item.ratingKey})
                         ui_print('[plex] item: "' + item.title + '" removed from ' + user[0] + '`s watchlist')
@@ -109,7 +109,7 @@ class watchlist(classes.watchlist):
                 if not self == []:
                     self.data.remove(item)
             else:
-                url = 'https://metadata.provider.plex.tv/actions/removeFromWatchlist?ratingKey=' + item.ratingKey + '&X-Plex-Token=' + item.user[1]
+                url = 'https://discover.provider.plex.tv/actions/removeFromWatchlist?ratingKey=' + item.ratingKey + '&X-Plex-Token=' + item.user[1]
                 try:
                     response = session.put(url, data={'ratingKey': item.ratingKey})
                     ui_print('[plex] item: "' + item.title + '" removed from ' + item.user[0] + '`s watchlist')
@@ -120,7 +120,7 @@ class watchlist(classes.watchlist):
 
     def add(self, item, user):
         ui_print('[plex] item: "' + item.title + '" added to ' + user[0] + '`s watchlist')
-        url = 'https://metadata.provider.plex.tv/actions/addToWatchlist?ratingKey=' + item.ratingKey + '&X-Plex-Token=' + \
+        url = 'https://discover.provider.plex.tv/actions/addToWatchlist?ratingKey=' + item.ratingKey + '&X-Plex-Token=' + \
                 user[1]
         response = session.put(url, data={'ratingKey': item.ratingKey})
         if item.type == 'show':
@@ -133,7 +133,7 @@ class watchlist(classes.watchlist):
         new_watchlist = []
         try:
             for user in users:
-                url = 'https://metadata.provider.plex.tv/library/sections/watchlist/all?X-Plex-Token=' + user[1]
+                url = 'https://discover.provider.plex.tv/library/sections/watchlist/all?X-Plex-Token=' + user[1]
                 response = get(url)
                 if hasattr(response, 'MediaContainer'):
                     if hasattr(response.MediaContainer, 'Metadata'):
@@ -179,7 +179,7 @@ class season(classes.media):
                     token = user[1]
         viewCount = 0
         while len(self.Episodes) < self.leafCount:
-            url = 'https://metadata.provider.plex.tv/library/metadata/' + self.ratingKey + '/children?includeUserState=1&X-Plex-Container-Size=200&X-Plex-Container-Start=' + str(len(self.Episodes)) + '&X-Plex-Token=' + token
+            url = 'https://discover.provider.plex.tv/library/metadata/' + self.ratingKey + '/children?includeUserState=1&X-Plex-Container-Size=200&X-Plex-Container-Start=' + str(len(self.Episodes)) + '&X-Plex-Token=' + token
             response = get(url)
             if not response == None:
                 if hasattr(response, 'MediaContainer'):
@@ -225,13 +225,13 @@ class show(classes.media):
                     token = user[1]
         success = False
         while not success:
-            url = 'https://metadata.provider.plex.tv/library/metadata/' + ratingKey + '?includeUserState=1&X-Plex-Token=' + token
+            url = 'https://discover.provider.plex.tv/library/metadata/' + ratingKey + '?includeUserState=1&X-Plex-Token=' + token
             response = get(url)
             if not response == None:
                 self.__dict__.update(response.MediaContainer.Metadata[0].__dict__)
                 self.EID = setEID(self)
                 self.Seasons = []
-                url = 'https://metadata.provider.plex.tv/library/metadata/' + ratingKey + '/children?includeUserState=1&X-Plex-Container-Size=200&X-Plex-Container-Start=0&X-Plex-Token=' + token
+                url = 'https://discover.provider.plex.tv/library/metadata/' + ratingKey + '/children?includeUserState=1&X-Plex-Container-Size=200&X-Plex-Container-Start=0&X-Plex-Token=' + token
                 response = get(url)
                 if not response == None:
                     if hasattr(response, 'MediaContainer'):
@@ -285,7 +285,7 @@ class movie(classes.media):
             ratingKey = ratingKey.ratingKey
         elif ratingKey.startswith('plex://'):
             ratingKey = ratingKey.split('/')[-1]
-        url = 'https://metadata.provider.plex.tv/library/metadata/' + ratingKey + '?includeUserState=1&X-Plex-Token=' + token
+        url = 'https://discover.provider.plex.tv/library/metadata/' + ratingKey + '?includeUserState=1&X-Plex-Token=' + token
         response = get(url)
         self.__dict__.update(response.MediaContainer.Metadata[0].__dict__)
         self.EID = setEID(self)
@@ -728,7 +728,7 @@ class library(classes.library):
                     print("[plex] error: Could not find plex ignore service user: '"+ignoreuser+"'. Make sure this plex user exists.")
                     return
                 ui_print('[plex] ignoring item: ' + self.query() + " for user: '" + ignoreuser + "'")
-                url = 'https://metadata.provider.plex.tv/actions/scrobble?identifier=tv.plex.provider.metadata&key=' + self.ratingKey + '&X-Plex-Token=' + user[1]
+                url = 'https://discover.provider.plex.tv/actions/scrobble?identifier=tv.plex.provider.metadata&key=' + self.ratingKey + '&X-Plex-Token=' + user[1]
                 get(url)
                 if not self in classes.ignore.ignored:
                     classes.ignore.ignored += [self]
@@ -747,7 +747,7 @@ class library(classes.library):
                     print("[plex] error: Could not find plex ignore service user: '"+ignoreuser+"'. Make sure this plex user exists.")
                     return
                 ui_print('[plex] un-ignoring item: ' + self.query() + " for user: '" + ignoreuser + "'")
-                url = 'https://metadata.provider.plex.tv/actions/unscrobble?identifier=tv.plex.provider.metadata&key=' + self.ratingKey + '&X-Plex-Token=' + user[1]
+                url = 'https://discover.provider.plex.tv/actions/unscrobble?identifier=tv.plex.provider.metadata&key=' + self.ratingKey + '&X-Plex-Token=' + user[1]
                 get(url)
                 if self in classes.ignore.ignored:
                     classes.ignore.ignored.remove(self)
@@ -887,7 +887,7 @@ class library(classes.library):
 
 def search(query, library=[]):
     query = query.replace(' ', '%20')
-    url = 'https://metadata.provider.plex.tv/library/search?query=' + query + '&limit=20&searchTypes=movies%2Ctv&includeMetadata=1&X-Plex-Token=' + users[0][1]
+    url = 'https://discover.provider.plex.tv/library/search?query=' + query + '&limit=20&searchTypes=movies%2Ctv&includeMetadata=1&X-Plex-Token=' + users[0][1]
     response = get(url)
     try:
         return response.MediaContainer.SearchResult
