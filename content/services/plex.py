@@ -69,7 +69,7 @@ class watchlist(classes.watchlist):
                 while added < total:
                     total = 0
                     url = 'https://discover.provider.plex.tv/library/sections/watchlist/all?X-Plex-Container-Size=200&X-Plex-Container-Start=' + str(added) + '&X-Plex-Token=' + user[1]
-                    response = get(url)
+                    response = get(session, url)
                     if hasattr(response, 'MediaContainer'):
                         total = response.MediaContainer.totalSize
                         added += response.MediaContainer.size
@@ -134,7 +134,7 @@ class watchlist(classes.watchlist):
         try:
             for user in users:
                 url = 'https://discover.provider.plex.tv/library/sections/watchlist/all?X-Plex-Token=' + user[1]
-                response = get(url)
+                response = get(session, url)
                 if hasattr(response, 'MediaContainer'):
                     if hasattr(response.MediaContainer, 'Metadata'):
                         for entry in response.MediaContainer.Metadata:
@@ -180,7 +180,7 @@ class season(classes.media):
         viewCount = 0
         while len(self.Episodes) < self.leafCount:
             url = 'https://discover.provider.plex.tv/library/metadata/' + self.ratingKey + '/children?includeUserState=1&X-Plex-Container-Size=200&X-Plex-Container-Start=' + str(len(self.Episodes)) + '&X-Plex-Token=' + token
-            response = get(url)
+            response = get(session, url)
             if not response == None:
                 if hasattr(response, 'MediaContainer'):
                     self.duration = 0
@@ -226,13 +226,13 @@ class show(classes.media):
         success = False
         while not success:
             url = 'https://discover.provider.plex.tv/library/metadata/' + ratingKey + '?includeUserState=1&X-Plex-Token=' + token
-            response = get(url)
+            response = get(session, url)
             if not response == None:
                 self.__dict__.update(response.MediaContainer.Metadata[0].__dict__)
                 self.EID = setEID(self)
                 self.Seasons = []
                 url = 'https://discover.provider.plex.tv/library/metadata/' + ratingKey + '/children?includeUserState=1&X-Plex-Container-Size=200&X-Plex-Container-Start=0&X-Plex-Token=' + token
-                response = get(url)
+                response = get(session, url)
                 if not response == None:
                     if hasattr(response, 'MediaContainer'):
                         if hasattr(response.MediaContainer, 'Metadata'):
@@ -286,7 +286,7 @@ class movie(classes.media):
         elif ratingKey.startswith('plex://'):
             ratingKey = ratingKey.split('/')[-1]
         url = 'https://discover.provider.plex.tv/library/metadata/' + ratingKey + '?includeUserState=1&X-Plex-Token=' + token
-        response = get(url)
+        response = get(session, url)
         self.__dict__.update(response.MediaContainer.Metadata[0].__dict__)
         self.EID = setEID(self)
         if not hasattr(self,"watchlistedAt"):
@@ -729,7 +729,7 @@ class library(classes.library):
                     return
                 ui_print('[plex] ignoring item: ' + self.query() + " for user: '" + ignoreuser + "'")
                 url = 'https://discover.provider.plex.tv/actions/scrobble?identifier=tv.plex.provider.metadata&key=' + self.ratingKey + '&X-Plex-Token=' + user[1]
-                get(url)
+                get(session, url)
                 if not self in classes.ignore.ignored:
                     classes.ignore.ignored += [self]
             except Exception as e:
@@ -748,7 +748,7 @@ class library(classes.library):
                     return
                 ui_print('[plex] un-ignoring item: ' + self.query() + " for user: '" + ignoreuser + "'")
                 url = 'https://discover.provider.plex.tv/actions/unscrobble?identifier=tv.plex.provider.metadata&key=' + self.ratingKey + '&X-Plex-Token=' + user[1]
-                get(url)
+                get(session, url)
                 if self in classes.ignore.ignored:
                     classes.ignore.ignored.remove(self)
             except Exception as e:
@@ -888,7 +888,7 @@ class library(classes.library):
 def search(query, library=[]):
     query = query.replace(' ', '%20')
     url = 'https://discover.provider.plex.tv/library/search?query=' + query + '&limit=20&searchTypes=movies%2Ctv&includeMetadata=1&X-Plex-Token=' + users[0][1]
-    response = get(url)
+    response = get(session, url)
     try:
         return response.MediaContainer.SearchResult
     except:
