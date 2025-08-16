@@ -989,6 +989,8 @@ class media:
                             if datetime.datetime.utcnow() > self.offset_airtime[offset]:
                                 return True
                         return False
+                    if not hasattr(self, 'first_aired') or self.first_aired is None:
+                        return False
                     return datetime.datetime.utcnow() > datetime.datetime.strptime(self.first_aired, '%Y-%m-%dT%H:%M:%S.000Z')
                 elif self.type == 'movie':
                     release_date = None
@@ -998,18 +1000,18 @@ class media:
                         if release.release_type == 'digital' or release.release_type == 'physical' or release.release_type == 'tv':
                             if release_date == None:
                                 release_date = release.release_date
-                            elif datetime.datetime.strptime(release_date, '%Y-%m-%d') > datetime.datetime.strptime(release.release_date, '%Y-%m-%d'):
+                            elif release.release_date is not None and datetime.datetime.strptime(release_date, '%Y-%m-%d') > datetime.datetime.strptime(release.release_date, '%Y-%m-%d'):
                                 release_date = release.release_date
                     # If no release date was found, select the theatrical release date + 2 Month delay
                     if release_date == None:
                         for release in releases:
                             if release_date == None:
                                 release_date = release.release_date
-                            elif datetime.datetime.strptime(release_date, '%Y-%m-%d') > datetime.datetime.strptime(release.release_date, '%Y-%m-%d'):
+                            elif release.release_date is not None and datetime.datetime.strptime(release_date, '%Y-%m-%d') > datetime.datetime.strptime(release.release_date, '%Y-%m-%d'):
                                 release_date = release.release_date
-                        release_date = datetime.datetime.strptime(
-                            release_date, '%Y-%m-%d') + datetime.timedelta(days=60)
-                        release_date = release_date.strftime("%Y-%m-%d")
+                        if release_date is not None:
+                            release_date = datetime.datetime.strptime(release_date, '%Y-%m-%d') + datetime.timedelta(days=60)
+                            release_date = release_date.strftime("%Y-%m-%d")
                     # Get trakt 'Latest HD/4k Releases' Lists to accept early releases
                     match = False
                     if trakt.early_releases == "true":
@@ -1023,6 +1025,8 @@ class media:
                         ui_print("item: '" + self.query() +
                                  "' seems to be released prior to its official release date and will be downloaded.")
                         return True
+                    if release_date is None:
+                        return False
                     if hasattr(self, "offset_airtime"):
                         for offset in self.offset_airtime:
                             if datetime.datetime.utcnow() > (datetime.datetime.strptime(release_date, '%Y-%m-%d') + datetime.timedelta(hours=float(offset))):
@@ -1040,6 +1044,8 @@ class media:
                     return datetime.datetime.utcnow() > datetime.datetime.strptime(release_date, '%Y-%m-%d')
                 elif self.type == 'season':
                     try:
+                        if not hasattr(self, 'first_aired') or self.first_aired is None:
+                            return False
                         if hasattr(self, "offset_airtime") and len(self.offset_airtime) > 0:
                             for offset in self.offset_airtime:
                                 if datetime.datetime.utcnow() > datetime.datetime.strptime(self.first_aired, '%Y-%m-%dT%H:%M:%S.000Z') + datetime.timedelta(hours=float(offset)):
@@ -1049,6 +1055,8 @@ class media:
                     except:
                         return True
                 elif self.type == 'episode':
+                    if not hasattr(self, 'first_aired') or self.first_aired is None:
+                        return False
                     if hasattr(self, "offset_airtime"):
                         for offset in self.offset_airtime:
                             if datetime.datetime.utcnow() > datetime.datetime.strptime(self.first_aired, '%Y-%m-%dT%H:%M:%S.000Z') + datetime.timedelta(hours=float(offset)):
