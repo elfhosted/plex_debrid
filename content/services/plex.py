@@ -5,7 +5,7 @@ from content import classes
 from ui.ui_print import *
 
 name = 'Plex'
-session = requests.Session()
+session = custom_session(get_rate_limit=1.0, post_rate_limit=1.0)  # 1 second between requests = 60 requests/minute
 users = []
 headers = {'Content-Type': 'application/json', 'Accept': 'application/json'}
 current_library = []
@@ -28,7 +28,7 @@ def logerror(response):
         else:
             ui_print("plex error: (401 unauthorized): token for user '"+name+"' does not seem to work. check your plex user settings.")
 
-def get(url, timeout=60):
+def get(session: requests.Session, url: str, timeout=60):
     try:
         response = session.get(url, headers=headers, timeout=timeout)
         logerror(response)
@@ -38,7 +38,7 @@ def get(url, timeout=60):
         ui_print("plex error: (json exception): " + str(e), debug=ui_settings.debug)
         return None
 
-def post(url, data):
+def post(session: requests.Session, url: str, data):
     try:
         response = session.post(url, data=data, headers=headers)
         logerror(response)
@@ -346,7 +346,7 @@ class library(classes.library):
             working = False
             while not working:
                 try:
-                    response = get(library.url  + '/library/sections/?X-Plex-Token=' + users[0][1])
+                    response = get(session, library.url  + '/library/sections/?X-Plex-Token=' + users[0][1])
                     working = True
                     if len(response.MediaContainer.Directory) == 0:
                         print("It looks like this server does not have any libraries set-up! Please open the plex webui, setup at least one library and point it to your mounted debrid service drive.")
@@ -480,7 +480,7 @@ class library(classes.library):
                             while refreshing:
                                 refreshing = False
                                 url = library.url + '/library/sections/?X-Plex-Token=' + users[0][1]
-                                response = get(url)
+                                response = get(session, url)
                                 for section_ in response.MediaContainer.Directory:
                                     if section_.refreshing:
                                         refreshing = True
@@ -501,7 +501,7 @@ class library(classes.library):
                 names = []
                 element_type = ("show" if element.type in ["show","season","episode"] else "movie")
                 url = library.url + '/library/sections/?X-Plex-Token=' + users[0][1]
-                response = get(url)
+                response = get(session, url)
                 paths = []
                 for section_ in response.MediaContainer.Directory:
                     if section_.key in library.refresh.sections and element_type == section_.type:
@@ -547,7 +547,7 @@ class library(classes.library):
             working = False
             while not working:
                 try:
-                    response = get(library.url  + '/library/sections/?X-Plex-Token=' + users[0][1])
+                    response = get(session, library.url  + '/library/sections/?X-Plex-Token=' + users[0][1])
                     working = True
                     if len(response.MediaContainer.Directory) == 0:
                         print("It looks like this server does not have any libraries set-up! Please open the plex webui, setup at least one library and point it to your mounted debrid service drive.")
@@ -595,7 +595,7 @@ class library(classes.library):
                     url = library.url + '/library/sections/' + str(library_item.librarySectionID) + '/all?type=' + type_string + '&id=' + library_item.ratingKey + '&label.locked=1' + tags_string + '&X-Plex-Token=' + users[0][1]
                     response = session.put(url,headers=headers)
                 url = library.url + '/library/metadata/' + library_item.ratingKey + '?X-Plex-Token=' + users[0][1]
-                response = get(url)
+                response = get(session, url)
                 library_item.__dict__.update(response.MediaContainer.Metadata[0].__dict__)
             except Exception as e:
                 ui_print("[plex] error: couldnt add labels! Turn on debug printing for more info.")
@@ -785,7 +785,7 @@ class library(classes.library):
         if library.check == [['']]:
             library.check = []
         try:
-            response = get(library.url  + '/library/sections/?X-Plex-Token=' + users[0][1])
+            response = get(session, library.url  + '/library/sections/?X-Plex-Token=' + users[0][1])
             for Directory in response.MediaContainer.Directory:
                 if ([Directory.key] in library.check or library.check == []) and Directory.type in ["movie","show"]:
                     types = ['1'] if Directory.type == "movie" else  ['2', '3', '4']
@@ -804,7 +804,7 @@ class library(classes.library):
             section_title = ''
             for type in types:
                 url = library.url + '/library/sections/' + section + '/all?type=' + type + '&X-Plex-Token=' + users[0][1]
-                response = get(url)
+                response = get(session, url)
                 if hasattr(response, 'MediaContainer'):
                     if hasattr(response.MediaContainer, 'Metadata'):
                         for element in response.MediaContainer.Metadata:
@@ -860,7 +860,7 @@ class library(classes.library):
                 if not item in current_library:
                     updated = True
                     url = library.url + '/library/metadata/' + item.ratingKey + '?X-Plex-Token=' + users[0][1]
-                    response = get(url)
+                    response = get(session, url)
                     item.__dict__.update(response.MediaContainer.Metadata[0].__dict__)
                 else:
                     match = next((x for x in current_library if item == x), None)
@@ -934,7 +934,7 @@ def match(self):
         service,query = EID.split('://')
         query = '-'.join([service,query])
         url = current_module.library.url + '/library/metadata/' + some_local_media.ratingKey + '/matches?manual=1&title=' + query + '&agent=' + agent + '&language=en-US&X-Plex-Token=' + users[0][1]
-        response = get(url)
+        response = get(session, url)
         try:
             match = response.MediaContainer.SearchResult[0]
             if match.type == 'show':

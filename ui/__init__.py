@@ -277,7 +277,8 @@ def save(doprint=True):
         if doprint:
             print('Current settings saved!')
             time.sleep(2)
-    except:
+    except Exception as e:
+        print(str(e))
         print()
         print("Error: It looks like plex_debrid can not write your settings into a config file. Make sure you are running the script with write or administator privilege.")
         print()

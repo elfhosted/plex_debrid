@@ -1,4 +1,4 @@
-version = ['2.102', "Settings compatible update", []]
+version = ['2.103', "Settings compatible update", []]
 run_directly = "true"
 debug = "false"
 log = "false"

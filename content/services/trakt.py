@@ -232,9 +232,10 @@ def post(url, data):
 
 def post2(url, data):
     try:
-        response = session.post(url, headers={
-            'Content-type': "application/json"}, data=data)
-        logerror(response)
+        response = session.post(url, headers={'Content-type': "application/json"}, data=data)
+        if response.status_code not in [200, 201]:
+            ui_print(f"[trakt] error {response.status_code}: " + str(response.content), ui_settings.debug)
+            return None
         response = json.loads(response.content, object_hook=lambda d: SimpleNamespace(**d))
         time.sleep(1.1)
     except Exception as e:
