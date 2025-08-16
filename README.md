@@ -101,12 +101,21 @@ One variation to note is that you'll need to set the ENV vars `CLIENT_ID` and `C
                 </a>
             </td>
             <td align="center">
+                <a href="https://github.com/master131">
+                    <img src="https://avatars.githubusercontent.com/u/1592009?v=4" width="64;" alt="master131"/>
+                    <br />
+                    <sub><b>master131</b></sub>
+                </a>
+            </td>
+            <td align="center">
                 <a href="https://github.com/mcorcoran">
                     <img src="https://avatars.githubusercontent.com/u/1950615?v=4" width="64;" alt="mcorcoran"/>
                     <br />
                     <sub><b>mcorcoran</b></sub>
                 </a>
             </td>
+		</tr>
+		<tr>
             <td align="center">
                 <a href="https://github.com/piratsch">
                     <img src="https://avatars.githubusercontent.com/u/106690882?v=4" width="64;" alt="piratsch"/>
