@@ -14,6 +14,8 @@ media_file_extensions = [
 ]
 # (required) Authentification of the Debrid service, can be oauth aswell. Create a setting for the required variables in the ui.settings_list. For an oauth example check the trakt authentification.
 api_key = ""
+# RD rejects torrents whose names match these patterns; skip them client-side to avoid wasted API calls.
+blocked_title_pattern = regex.compile(r'web-dl|webrip|bdrip|hdrip|dvdrip|BluRay\.x264|HDTV\.x264|HDTV\.XviD|WEB\.x264|WEB\.h264', regex.IGNORECASE)
 # Define Variables
 session = requests.Session()
 errors = [
@@ -137,6 +139,9 @@ def download(element, stream=True, query='', force=False):
     for release in cached[:]:
         try:  # if release matches query
             if regex.match(query, release.title,regex.I) or force:
+                if not force and blocked_title_pattern.search(release.title):
+                    ui_print(f'[realdebrid]: skipping release "{release.title}" - matches RD blocked pattern.')
+                    continue
                 response = post('https://api.real-debrid.com/rest/1.0/torrents/addMagnet', {'magnet': release.download[0]})
                 if hasattr(response, 'error') and response.error == 'infringing_file':
                     ui_print(f'[realdebrid]: torrent {release.title} marked as infringing... looking for another release.')
